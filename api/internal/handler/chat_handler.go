@@ -19,6 +19,9 @@ func NewChatHandler(svc *service.ChatService) *ChatHandler {
 
 // Chat handles POST /api/v1/chat
 func (h *ChatHandler) Chat(w http.ResponseWriter, r *http.Request) {
+	const maxBodySize = 1 << 16 // 64KB
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
+
 	var req service.ChatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")

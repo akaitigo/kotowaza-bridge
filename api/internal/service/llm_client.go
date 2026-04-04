@@ -88,9 +88,10 @@ func (c *AnthropicClient) Chat(ctx context.Context, systemPrompt string, message
 	if err != nil {
 		return "", fmt.Errorf("send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
-	respBytes, err := io.ReadAll(resp.Body)
+	const maxResponseSize = 1 << 20 // 1MB
+	respBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return "", fmt.Errorf("read response: %w", err)
 	}

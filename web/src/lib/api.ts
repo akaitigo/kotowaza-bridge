@@ -8,7 +8,8 @@ async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
 		const body = await res.json().catch(() => ({ error: res.statusText }));
 		throw new Error(body.error ?? `HTTP ${res.status}`);
 	}
-	return res.json() as Promise<T>;
+	const data: T = await res.json();
+	return data;
 }
 
 export async function listKotowaza(limit = 20, offset = 0): Promise<ListResponse> {

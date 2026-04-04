@@ -42,8 +42,30 @@ func NewChatService(repo repository.KotowazaRepository, llmClient LLMClient) *Ch
 	return &ChatService{repo: repo, llmClient: llmClient}
 }
 
+const (
+	maxMessages      = 50
+	maxMessageLength = 2000
+)
+
+var validRoles = map[string]bool{"user": true, "assistant": true}
+
 // Chat sends a chat message and returns the LLM response.
 func (s *ChatService) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
+	if len(req.Messages) == 0 {
+		return nil, fmt.Errorf("messages must not be empty")
+	}
+	if len(req.Messages) > maxMessages {
+		return nil, fmt.Errorf("too many messages (max %d)", maxMessages)
+	}
+	for _, m := range req.Messages {
+		if !validRoles[m.Role] {
+			return nil, fmt.Errorf("invalid role: %s", m.Role)
+		}
+		if len(m.Content) > maxMessageLength {
+			return nil, fmt.Errorf("message too long (max %d characters)", maxMessageLength)
+		}
+	}
+
 	k, err := s.repo.GetByID(ctx, req.KotowazaID)
 	if err != nil {
 		return nil, fmt.Errorf("get kotowaza for chat: %w", err)

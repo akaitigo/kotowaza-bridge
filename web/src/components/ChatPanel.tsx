@@ -1,7 +1,8 @@
 "use client";
 
+import { chat } from "@/lib/api";
 import type { ChatMessage } from "@/types/kotowaza";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface ChatPanelProps {
 	kotowazaId: string;
@@ -32,18 +33,7 @@ export default function ChatPanel({ kotowazaId, kotowazaJapanese }: ChatPanelPro
 		setTimeout(scrollToBottom, 50);
 
 		try {
-			const res = await fetch("/api/v1/chat", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					kotowaza_id: kotowazaId,
-					messages: updatedMessages,
-				}),
-			});
-			if (!res.ok) {
-				throw new Error(`HTTP ${res.status}`);
-			}
-			const data = await res.json();
+			const data = await chat(kotowazaId, updatedMessages);
 			setMessages((prev) => [...prev, data.message]);
 			setTimeout(scrollToBottom, 50);
 		} catch (err) {
