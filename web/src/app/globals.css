@@ -1,0 +1,36 @@
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+:root {
+	--color-bg: #faf9f6;
+	--color-text: #1a1a2e;
+	--color-primary: #e94560;
+	--color-secondary: #16213e;
+	--color-accent: #0f3460;
+	--color-card: #ffffff;
+	--color-border: #e0e0e0;
+	--color-muted: #6b7280;
+	--max-width: 960px;
+	--radius: 8px;
+}
+
+body {
+	font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+	background: var(--color-bg);
+	color: var(--color-text);
+	line-height: 1.7;
+}
+
+a {
+	color: var(--color-accent);
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
