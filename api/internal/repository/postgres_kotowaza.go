@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/akaitigo/kotowaza-bridge/api/internal/domain/kotowaza"
@@ -53,7 +54,7 @@ func (r *PostgresKotowazaRepository) GetByID(ctx context.Context, id uuid.UUID) 
 	var k kotowaza.Kotowaza
 	err := row.Scan(&k.ID, &k.Japanese, &k.Reading, &k.Meaning, &k.Origin, &k.UsageExample, &k.CulturalNote, &k.CreatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get kotowaza by id: %w", err)
