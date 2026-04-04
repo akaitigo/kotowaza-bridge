@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+.next/
+out/
+api/server
+
+# Coverage
+coverage/
+coverage.out
+*.lcov
+
+# Environment
+.env
+.env.local
+.env.production
+.env.staging
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+*.cache
+.turbo/
+
+# Credentials
+credentials.json
+secrets.yml
+*.pem
+*.key
+
+# Backup
+*.backup.md
