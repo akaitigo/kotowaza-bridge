@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
 import { getKotowaza } from "@/lib/api";
 import type { Kotowaza } from "@/types/kotowaza";
+import { use, useEffect, useState } from "react";
 
 const LANGUAGE_NAMES: Record<string, string> = {
 	en: "English",

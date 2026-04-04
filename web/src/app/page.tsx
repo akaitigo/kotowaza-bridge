@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import KotowazaCard from "@/components/KotowazaCard";
 import SearchBar from "@/components/SearchBar";
-import type { Kotowaza } from "@/types/kotowaza";
 import { listKotowaza, searchKotowaza } from "@/lib/api";
+import type { Kotowaza } from "@/types/kotowaza";
+import { useCallback, useEffect, useState } from "react";
 
 export default function Home() {
 	const [items, setItems] = useState<Kotowaza[]>([]);
