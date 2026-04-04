@@ -60,10 +60,7 @@ func NewAnthropicClient(apiKey, model string) *AnthropicClient {
 func (c *AnthropicClient) Chat(ctx context.Context, systemPrompt string, messages []ChatMessage) (string, error) {
 	anthropicMsgs := make([]anthropicMessage, 0, len(messages))
 	for _, m := range messages {
-		anthropicMsgs = append(anthropicMsgs, anthropicMessage{
-			Role:    m.Role,
-			Content: m.Content,
-		})
+		anthropicMsgs = append(anthropicMsgs, anthropicMessage(m))
 	}
 
 	reqBody := anthropicRequest{
