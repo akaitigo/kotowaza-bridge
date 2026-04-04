@@ -49,6 +49,10 @@ func run() error {
 	kotowazaSvc := service.NewKotowazaService(repo)
 	kotowazaH := handler.NewKotowazaHandler(kotowazaSvc)
 
+	llmClient := service.NewAnthropicClient(cfg.LLMAPIKey, cfg.LLMModel)
+	chatSvc := service.NewChatService(repo, llmClient)
+	chatH := handler.NewChatHandler(chatSvc)
+
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
@@ -60,6 +64,7 @@ func run() error {
 		r.Get("/kotowaza", kotowazaH.List)
 		r.Get("/kotowaza/search", kotowazaH.Search)
 		r.Get("/kotowaza/{id}", kotowazaH.GetByID)
+		r.Post("/chat", chatH.Chat)
 	})
 
 	srv := &http.Server{
