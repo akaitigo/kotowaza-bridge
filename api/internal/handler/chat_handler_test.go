@@ -88,7 +88,7 @@ func TestChatHandler_Chat(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
-	t.Run("returns 500 when kotowaza not found", func(t *testing.T) {
+	t.Run("returns 404 when kotowaza not found", func(t *testing.T) {
 		mockRepo := &repository.MockKotowazaRepository{
 			GetByIDFn: func(_ context.Context, _ uuid.UUID) (*kotowaza.Kotowaza, error) {
 				return nil, nil
@@ -107,6 +107,24 @@ func TestChatHandler_Chat(t *testing.T) {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
-		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("returns 400 for validation error", func(t *testing.T) {
+		mockRepo := &repository.MockKotowazaRepository{}
+		llm := &testLLMClient{}
+
+		r := setupChatHandler(mockRepo, llm)
+
+		body, _ := json.Marshal(service.ChatRequest{
+			KotowazaID: uuid.New(),
+			Messages:   []service.ChatMessage{},
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/chat", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }

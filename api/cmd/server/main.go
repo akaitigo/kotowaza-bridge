@@ -73,17 +73,22 @@ func run() error {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
-
+	errCh := make(chan error, 1)
 	go func() {
 		log.Printf("server listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %v", err)
+			errCh <- fmt.Errorf("listen: %w", err)
 		}
 	}()
 
-	<-done
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-done:
+	}
 	log.Println("shutting down...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
