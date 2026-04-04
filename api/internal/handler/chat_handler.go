@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/akaitigo/kotowaza-bridge/api/internal/service"
@@ -30,7 +31,14 @@ func (h *ChatHandler) Chat(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.svc.Chat(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "chat failed")
+		switch {
+		case errors.Is(err, service.ErrValidation):
+			writeError(w, http.StatusBadRequest, err.Error())
+		case errors.Is(err, service.ErrNotFound):
+			writeError(w, http.StatusNotFound, err.Error())
+		default:
+			writeError(w, http.StatusInternalServerError, "chat failed")
+		}
 		return
 	}
 

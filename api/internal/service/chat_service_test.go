@@ -116,6 +116,56 @@ func TestChatService_Chat(t *testing.T) {
 	})
 }
 
+func TestChatService_Validation(t *testing.T) {
+	mockRepo := &repository.MockKotowazaRepository{}
+	mockLLM := &mockLLMClient{}
+	svc := NewChatService(mockRepo, mockLLM)
+
+	t.Run("rejects empty messages", func(t *testing.T) {
+		_, err := svc.Chat(context.Background(), ChatRequest{
+			KotowazaID: uuid.New(),
+			Messages:   []ChatMessage{},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must not be empty")
+	})
+
+	t.Run("rejects too many messages", func(t *testing.T) {
+		msgs := make([]ChatMessage, 51)
+		for i := range msgs {
+			msgs[i] = ChatMessage{Role: "user", Content: "test"}
+		}
+		_, err := svc.Chat(context.Background(), ChatRequest{
+			KotowazaID: uuid.New(),
+			Messages:   msgs,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "too many messages")
+	})
+
+	t.Run("rejects invalid role", func(t *testing.T) {
+		_, err := svc.Chat(context.Background(), ChatRequest{
+			KotowazaID: uuid.New(),
+			Messages:   []ChatMessage{{Role: "system", Content: "hack"}},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid role")
+	})
+
+	t.Run("rejects message too long", func(t *testing.T) {
+		longMsg := make([]byte, 2001)
+		for i := range longMsg {
+			longMsg[i] = 'a'
+		}
+		_, err := svc.Chat(context.Background(), ChatRequest{
+			KotowazaID: uuid.New(),
+			Messages:   []ChatMessage{{Role: "user", Content: string(longMsg)}},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "message too long")
+	})
+}
+
 func TestBuildSystemPrompt(t *testing.T) {
 	k := &kotowaza.Kotowaza{
 		Japanese:     "猿も木から落ちる",

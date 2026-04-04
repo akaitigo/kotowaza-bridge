@@ -2,12 +2,19 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/akaitigo/kotowaza-bridge/api/internal/domain/kotowaza"
 	"github.com/akaitigo/kotowaza-bridge/api/internal/repository"
 	"github.com/google/uuid"
 )
+
+// ErrValidation indicates a client input validation error.
+var ErrValidation = errors.New("validation error")
+
+// ErrNotFound indicates a resource was not found.
+var ErrNotFound = errors.New("not found")
 
 // ChatMessage represents a single chat message.
 type ChatMessage struct {
@@ -52,17 +59,17 @@ var validRoles = map[string]bool{"user": true, "assistant": true}
 // Chat sends a chat message and returns the LLM response.
 func (s *ChatService) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
 	if len(req.Messages) == 0 {
-		return nil, fmt.Errorf("messages must not be empty")
+		return nil, fmt.Errorf("%w: messages must not be empty", ErrValidation)
 	}
 	if len(req.Messages) > maxMessages {
-		return nil, fmt.Errorf("too many messages (max %d)", maxMessages)
+		return nil, fmt.Errorf("%w: too many messages (max %d)", ErrValidation, maxMessages)
 	}
 	for _, m := range req.Messages {
 		if !validRoles[m.Role] {
-			return nil, fmt.Errorf("invalid role: %s", m.Role)
+			return nil, fmt.Errorf("%w: invalid role: %s", ErrValidation, m.Role)
 		}
 		if len(m.Content) > maxMessageLength {
-			return nil, fmt.Errorf("message too long (max %d characters)", maxMessageLength)
+			return nil, fmt.Errorf("%w: message too long (max %d characters)", ErrValidation, maxMessageLength)
 		}
 	}
 
@@ -71,7 +78,7 @@ func (s *ChatService) Chat(ctx context.Context, req ChatRequest) (*ChatResponse,
 		return nil, fmt.Errorf("get kotowaza for chat: %w", err)
 	}
 	if k == nil {
-		return nil, fmt.Errorf("kotowaza not found: %s", req.KotowazaID)
+		return nil, fmt.Errorf("%w: kotowaza %s", ErrNotFound, req.KotowazaID)
 	}
 
 	systemPrompt := buildSystemPrompt(k)
