@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -126,5 +127,95 @@ func TestChatHandler_Chat(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("returns 429 when LLM rate limited", func(t *testing.T) {
+		testID := uuid.MustParse("a1b2c3d4-0001-4000-8000-000000000001")
+		mockRepo := &repository.MockKotowazaRepository{
+			GetByIDFn: func(_ context.Context, _ uuid.UUID) (*kotowaza.Kotowaza, error) {
+				return &kotowaza.Kotowaza{
+					ID:           testID,
+					Japanese:     "猿も木から落ちる",
+					Reading:      "さるもきからおちる",
+					Meaning:      "テスト",
+					UsageExample: "テスト",
+					CreatedAt:    time.Now(),
+				}, nil
+			},
+		}
+		llm := &testLLMClient{err: fmt.Errorf("%w: status 429: rate limited", service.ErrLLMRateLimit)}
+
+		r := setupChatHandler(mockRepo, llm)
+
+		body, _ := json.Marshal(service.ChatRequest{
+			KotowazaID: testID,
+			Messages:   []service.ChatMessage{{Role: "user", Content: "test"}},
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/chat", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
+	})
+
+	t.Run("returns 503 when LLM unavailable", func(t *testing.T) {
+		testID := uuid.MustParse("a1b2c3d4-0001-4000-8000-000000000001")
+		mockRepo := &repository.MockKotowazaRepository{
+			GetByIDFn: func(_ context.Context, _ uuid.UUID) (*kotowaza.Kotowaza, error) {
+				return &kotowaza.Kotowaza{
+					ID:           testID,
+					Japanese:     "猿も木から落ちる",
+					Reading:      "さるもきからおちる",
+					Meaning:      "テスト",
+					UsageExample: "テスト",
+					CreatedAt:    time.Now(),
+				}, nil
+			},
+		}
+		llm := &testLLMClient{err: fmt.Errorf("%w: status 503: service unavailable", service.ErrLLMUnavailable)}
+
+		r := setupChatHandler(mockRepo, llm)
+
+		body, _ := json.Marshal(service.ChatRequest{
+			KotowazaID: testID,
+			Messages:   []service.ChatMessage{{Role: "user", Content: "test"}},
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/chat", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+	})
+
+	t.Run("returns 504 when context deadline exceeded", func(t *testing.T) {
+		testID := uuid.MustParse("a1b2c3d4-0001-4000-8000-000000000001")
+		mockRepo := &repository.MockKotowazaRepository{
+			GetByIDFn: func(_ context.Context, _ uuid.UUID) (*kotowaza.Kotowaza, error) {
+				return &kotowaza.Kotowaza{
+					ID:           testID,
+					Japanese:     "猿も木から落ちる",
+					Reading:      "さるもきからおちる",
+					Meaning:      "テスト",
+					UsageExample: "テスト",
+					CreatedAt:    time.Now(),
+				}, nil
+			},
+		}
+		llm := &testLLMClient{err: fmt.Errorf("llm chat: %w", context.DeadlineExceeded)}
+
+		r := setupChatHandler(mockRepo, llm)
+
+		body, _ := json.Marshal(service.ChatRequest{
+			KotowazaID: testID,
+			Messages:   []service.ChatMessage{{Role: "user", Content: "test"}},
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/chat", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusGatewayTimeout, w.Code)
 	})
 }

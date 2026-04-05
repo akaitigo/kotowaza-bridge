@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -36,6 +37,15 @@ func (h *ChatHandler) Chat(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, err.Error())
 		case errors.Is(err, service.ErrNotFound):
 			writeError(w, http.StatusNotFound, err.Error())
+		case errors.Is(err, service.ErrLLMRateLimit):
+			writeError(w, http.StatusTooManyRequests, "LLM service is busy, please try again later")
+		case errors.Is(err, service.ErrLLMUnavailable):
+			writeError(w, http.StatusServiceUnavailable, "LLM service is temporarily unavailable")
+		case errors.Is(err, context.DeadlineExceeded):
+			writeError(w, http.StatusGatewayTimeout, "request timed out")
+		case errors.Is(err, context.Canceled):
+			// Client disconnected; no response needed but log it.
+			writeError(w, http.StatusBadRequest, "request canceled")
 		default:
 			writeError(w, http.StatusInternalServerError, "chat failed")
 		}
