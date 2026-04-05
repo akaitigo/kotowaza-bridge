@@ -97,7 +97,14 @@ func (c *AnthropicClient) Chat(ctx context.Context, systemPrompt string, message
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("anthropic API error (status %d): %s", resp.StatusCode, string(respBytes))
+		switch resp.StatusCode {
+		case http.StatusTooManyRequests:
+			return "", fmt.Errorf("%w: status %d: %s", ErrLLMRateLimit, resp.StatusCode, string(respBytes))
+		case http.StatusServiceUnavailable, http.StatusBadGateway, http.StatusGatewayTimeout:
+			return "", fmt.Errorf("%w: status %d: %s", ErrLLMUnavailable, resp.StatusCode, string(respBytes))
+		default:
+			return "", fmt.Errorf("anthropic API error (status %d): %s", resp.StatusCode, string(respBytes))
+		}
 	}
 
 	var anthropicResp anthropicResponse

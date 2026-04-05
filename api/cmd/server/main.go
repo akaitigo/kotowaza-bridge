@@ -22,7 +22,8 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatalf("server failed: %v", err)
+		log.Printf("server failed: %v", err)
+		os.Exit(1)
 	}
 }
 
@@ -59,12 +60,15 @@ func run() error {
 	r.Use(chimw.RequestID)
 	r.Use(middleware.CORS(cfg.CORSOrigin))
 
+	chatRateLimiter := middleware.NewIPRateLimiter(middleware.DefaultChatRateLimiterConfig())
+	defer chatRateLimiter.Close()
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", handler.Health)
 		r.Get("/kotowaza", kotowazaH.List)
 		r.Get("/kotowaza/search", kotowazaH.Search)
 		r.Get("/kotowaza/{id}", kotowazaH.GetByID)
-		r.Post("/chat", chatH.Chat)
+		r.With(chatRateLimiter.Middleware).Post("/chat", chatH.Chat)
 	})
 
 	srv := &http.Server{

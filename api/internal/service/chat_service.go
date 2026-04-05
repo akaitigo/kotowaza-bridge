@@ -16,6 +16,12 @@ var ErrValidation = errors.New("validation error")
 // ErrNotFound indicates a resource was not found.
 var ErrNotFound = errors.New("not found")
 
+// ErrLLMRateLimit indicates the upstream LLM API returned a rate limit error.
+var ErrLLMRateLimit = errors.New("llm rate limited")
+
+// ErrLLMUnavailable indicates the upstream LLM service is temporarily unavailable.
+var ErrLLMUnavailable = errors.New("llm unavailable")
+
 // ChatMessage represents a single chat message.
 type ChatMessage struct {
 	Role    string `json:"role"`

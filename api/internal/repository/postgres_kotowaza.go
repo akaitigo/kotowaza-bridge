@@ -84,11 +84,11 @@ func (r *PostgresKotowazaRepository) GetByID(ctx context.Context, id uuid.UUID) 
 }
 
 func (r *PostgresKotowazaRepository) Search(ctx context.Context, params kotowaza.SearchParams) ([]kotowaza.Kotowaza, int, error) {
-	query := "%" + params.Query + "%"
+	query := "%" + escapeLikePattern(params.Query) + "%"
 
 	var total int
 	err := r.pool.QueryRow(ctx,
-		"SELECT COUNT(*) FROM kotowaza WHERE japanese LIKE $1 OR reading LIKE $1 OR meaning LIKE $1",
+		"SELECT COUNT(*) FROM kotowaza WHERE japanese LIKE $1 ESCAPE '\\' OR reading LIKE $1 ESCAPE '\\' OR meaning LIKE $1 ESCAPE '\\'",
 		query,
 	).Scan(&total)
 	if err != nil {
@@ -96,7 +96,7 @@ func (r *PostgresKotowazaRepository) Search(ctx context.Context, params kotowaza
 	}
 
 	rows, err := r.pool.Query(ctx,
-		"SELECT id, japanese, reading, meaning, origin, usage_example, cultural_note, created_at FROM kotowaza WHERE japanese LIKE $1 OR reading LIKE $1 OR meaning LIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+		"SELECT id, japanese, reading, meaning, origin, usage_example, cultural_note, created_at FROM kotowaza WHERE japanese LIKE $1 ESCAPE '\\' OR reading LIKE $1 ESCAPE '\\' OR meaning LIKE $1 ESCAPE '\\' ORDER BY created_at DESC LIMIT $2 OFFSET $3",
 		query, params.Limit, params.Offset,
 	)
 	if err != nil {
@@ -110,6 +110,21 @@ func (r *PostgresKotowazaRepository) Search(ctx context.Context, params kotowaza
 	}
 
 	return result, total, nil
+}
+
+// escapeLikePattern escapes LIKE metacharacters (%, _, \) in a search query
+// so they are treated as literal characters.
+func escapeLikePattern(s string) string {
+	var buf []byte
+	for i := range len(s) {
+		switch s[i] {
+		case '\\', '%', '_':
+			buf = append(buf, '\\', s[i])
+		default:
+			buf = append(buf, s[i])
+		}
+	}
+	return string(buf)
 }
 
 func scanKotowazaRows(rows pgx.Rows) ([]kotowaza.Kotowaza, error) {

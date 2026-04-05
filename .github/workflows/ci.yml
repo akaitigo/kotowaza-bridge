@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install
-        run: cd web && npm install
+        run: cd web && npm ci
       - name: Lint
         run: cd web && npx oxlint . && npx biome check .
       - name: Typecheck
