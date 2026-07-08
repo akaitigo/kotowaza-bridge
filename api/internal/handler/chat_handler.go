@@ -9,13 +9,20 @@ import (
 	"github.com/akaitigo/kotowaza-bridge/api/internal/service"
 )
 
+// ChatServicer is the subset of the chat service the handler depends on.
+// Depending on the interface rather than the concrete *service.ChatService lets
+// tests inject a mock and exercise error paths in isolation.
+type ChatServicer interface {
+	Chat(ctx context.Context, req service.ChatRequest) (*service.ChatResponse, error)
+}
+
 // ChatHandler handles HTTP requests for chat endpoints.
 type ChatHandler struct {
-	svc *service.ChatService
+	svc ChatServicer
 }
 
 // NewChatHandler creates a new ChatHandler.
-func NewChatHandler(svc *service.ChatService) *ChatHandler {
+func NewChatHandler(svc ChatServicer) *ChatHandler {
 	return &ChatHandler{svc: svc}
 }
 

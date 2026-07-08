@@ -12,10 +12,10 @@ import (
 
 // anthropicRequest represents the Anthropic Messages API request body.
 type anthropicRequest struct {
-	Model     string              `json:"model"`
-	MaxTokens int                 `json:"max_tokens"`
-	System    string              `json:"system"`
-	Messages  []anthropicMessage  `json:"messages"`
+	Model     string             `json:"model"`
+	MaxTokens int                `json:"max_tokens"`
+	System    string             `json:"system"`
+	Messages  []anthropicMessage `json:"messages"`
 }
 
 type anthropicMessage struct {
@@ -38,18 +38,23 @@ type anthropicError struct {
 	Message string `json:"message"`
 }
 
+// anthropicMessagesURL is the default Anthropic Messages API endpoint.
+const anthropicMessagesURL = "https://api.anthropic.com/v1/messages"
+
 // AnthropicClient implements LLMClient using the Anthropic Messages API.
 type AnthropicClient struct {
 	apiKey     string
 	model      string
+	baseURL    string
 	httpClient *http.Client
 }
 
 // NewAnthropicClient creates a new AnthropicClient.
 func NewAnthropicClient(apiKey, model string) *AnthropicClient {
 	return &AnthropicClient{
-		apiKey: apiKey,
-		model:  model,
+		apiKey:  apiKey,
+		model:   model,
+		baseURL: anthropicMessagesURL,
 		httpClient: &http.Client{
 			Timeout: 60 * time.Second,
 		},
@@ -75,7 +80,7 @@ func (c *AnthropicClient) Chat(ctx context.Context, systemPrompt string, message
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.anthropic.com/v1/messages", bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return "", fmt.Errorf("create request: %w", err)
 	}
