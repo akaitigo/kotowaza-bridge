@@ -54,27 +54,36 @@ func run() error {
 	chatSvc := service.NewChatService(repo, llmClient)
 	chatH := handler.NewChatHandler(chatSvc)
 
+	healthH := handler.NewHealthHandler(pool)
+
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.RequestID)
-	r.Use(middleware.CORS(cfg.CORSOrigin))
+	r.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
 	chatRateLimiter := middleware.NewIPRateLimiter(middleware.DefaultChatRateLimiterConfig())
 	defer chatRateLimiter.Close()
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/health", handler.Health)
+		r.Get("/health", healthH.Live)
+		r.Get("/health/ready", healthH.Ready)
 		r.Get("/kotowaza", kotowazaH.List)
 		r.Get("/kotowaza/search", kotowazaH.Search)
 		r.Get("/kotowaza/{id}", kotowazaH.GetByID)
 		r.With(chatRateLimiter.Middleware).Post("/chat", chatH.Chat)
 	})
 
+	// WriteTimeout must exceed the upstream LLM client timeout (60s) so slow but
+	// valid chat responses are not cut off; IdleTimeout bounds keep-alive
+	// connections to avoid file-descriptor exhaustion.
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           r,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      90 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	errCh := make(chan error, 1)
