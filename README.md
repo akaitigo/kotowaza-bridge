@@ -43,9 +43,11 @@ cp .env.example .env
 # .env を編集して DATABASE_URL と LLM_API_KEY を設定
 
 # データベースをセットアップ
+# 注意: 002 はことわざ本体を参照する追加データのため、seed の後に適用する
 psql $DATABASE_URL < api/db/migrations/001_create_tables.sql
-psql $DATABASE_URL < api/db/migrations/002_additional_equivalents.sql
 psql $DATABASE_URL < api/db/seed.sql
+psql $DATABASE_URL < api/db/migrations/002_additional_equivalents.sql
+psql $DATABASE_URL < api/db/migrations/003_search_indexes.up.sql
 
 # API サーバーを起動
 cd api && go run ./cmd/server
