@@ -83,7 +83,8 @@ kotowaza-bridge/
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/health` | ヘルスチェック |
+| GET | `/api/v1/health` | Liveness（プロセス稼働確認、依存先に触れない） |
+| GET | `/api/v1/health/ready` | Readiness（DB接続を検証。障害時は503） |
 | GET | `/api/v1/kotowaza` | ことわざ一覧 |
 | GET | `/api/v1/kotowaza/:id` | ことわざ詳細 |
 | GET | `/api/v1/kotowaza/search?q=` | キーワード検索 |

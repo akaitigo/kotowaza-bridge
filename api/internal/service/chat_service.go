@@ -79,6 +79,10 @@ func (s *ChatService) Chat(ctx context.Context, req ChatRequest) (*ChatResponse,
 		}
 	}
 
+	if req.KotowazaID == uuid.Nil {
+		return nil, fmt.Errorf("%w: kotowaza_id must not be zero value", ErrValidation)
+	}
+
 	k, err := s.repo.GetByID(ctx, req.KotowazaID)
 	if err != nil {
 		return nil, fmt.Errorf("get kotowaza for chat: %w", err)

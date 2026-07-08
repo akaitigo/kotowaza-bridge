@@ -164,6 +164,16 @@ func TestChatService_Validation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "message too long")
 	})
+
+	t.Run("rejects zero-value kotowaza id before hitting the repository", func(t *testing.T) {
+		_, err := svc.Chat(context.Background(), ChatRequest{
+			KotowazaID: uuid.Nil,
+			Messages:   []ChatMessage{{Role: "user", Content: "test"}},
+		})
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrValidation)
+		assert.Contains(t, err.Error(), "zero value")
+	})
 }
 
 func TestBuildSystemPrompt(t *testing.T) {
